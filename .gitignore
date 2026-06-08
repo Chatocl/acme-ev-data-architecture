@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Entornos virtuales
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# Archivos generados
+data/GPS/*
+data/ESTADO/*
+
+!data/GPS/.gitkeep
+!data/ESTADO/.gitkeep
+
+# Logs
+*.log
+
+# Docker
+.mongo_data/
+.postgres_data/
+
+# Spark checkpoints
+spark-checkpoints/
+tmp/

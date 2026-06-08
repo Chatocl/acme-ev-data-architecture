@@ -51,17 +51,11 @@ services:
     depends_on:
       - kafka
       - mongodb
-      - postgres
     ports:
       - "4040:4040"
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MONGO_URI: mongodb://mongodb:27017/
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: acme_ev
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
     restart: unless-stopped
 
   mongodb:

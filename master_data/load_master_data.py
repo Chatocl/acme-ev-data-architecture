@@ -33,6 +33,10 @@ conn = conectar_postgres()
 cursor = conn.cursor()
 
 print("Conectado a PostgreSQL")
+#Eliminar tablas operativas obsoletas si existen para evitar conflictos con la nueva estructura de datos
+cursor.execute("DROP TABLE IF EXISTS gps;")
+cursor.execute("DROP TABLE IF EXISTS estado;")
+print("Tablas operativas obsoletas removidas de PostgreSQL")
 
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS clientes (

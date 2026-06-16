@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pymongo import MongoClient
 from pyspark.sql import SparkSession
@@ -36,6 +36,7 @@ mongo_db = mongo_client["acme_ev"]
 
 gps_raw = mongo_db["gps_raw"]
 estado_raw = mongo_db["estado_raw"]
+metricas_rendimiento = mongo_db["metricas_rendimiento"]
 
 print("Conectado a MongoDB")
 
@@ -66,16 +67,34 @@ def preparar_documento_mongo(data):
     return documento
 
 
+# Guardar metrica de rendimiento
+def guardar_metrica(modo, tipo, registros, duracion):
+    registros_por_segundo = registros / duracion if duracion > 0 else 0
+
+    metricas_rendimiento.insert_one(
+        {
+            "fecha": datetime.now(timezone.utc),
+            "modo": modo,
+            "tipo": tipo,
+            "registros": registros,
+            "duracion_segundos": duracion,
+            "registros_por_segundo": registros_por_segundo,
+        }
+    )
+
+
 # Guardar GPS en tiempo real
 def guardar_gps_tiempo_real(data):
     inicio = time.time()
 
     gps_raw.insert_one(preparar_documento_mongo(data))
 
-    id_vehiculo = data["id_vehiculo"]
-
     fin = time.time()
     duracion = fin - inicio
+
+    guardar_metrica("Tiempo Real", "GPS", 1, duracion)
+
+    id_vehiculo = data["id_vehiculo"]
 
     print(f"GPS MongoDB tiempo real: {id_vehiculo} | {duracion:.4f} segundos")
 
@@ -86,10 +105,12 @@ def guardar_estado_tiempo_real(data):
 
     estado_raw.insert_one(preparar_documento_mongo(data))
 
-    id_vehiculo = data["id_vehiculo"]
-
     fin = time.time()
     duracion = fin - inicio
+
+    guardar_metrica("Tiempo Real", "ESTADO", 1, duracion)
+
+    id_vehiculo = data["id_vehiculo"]
 
     print(f"ESTADO MongoDB tiempo real: {id_vehiculo} | {duracion:.4f} segundos")
 
@@ -109,6 +130,8 @@ def guardar_batch_gps(batch_gps):
     duracion = fin - inicio
     rendimiento = len(batch_gps) / duracion if duracion > 0 else 0
 
+    guardar_metrica("Batch", "GPS", len(batch_gps), duracion)
+
     print(f"Batch GPS MongoDB guardado: {len(batch_gps)} registros | {duracion:.4f} segundos | {rendimiento:.2f} reg/s")
 
 
@@ -126,6 +149,8 @@ def guardar_batch_estado(batch_estado):
     fin = time.time()
     duracion = fin - inicio
     rendimiento = len(batch_estado) / duracion if duracion > 0 else 0
+
+    guardar_metrica("Batch", "ESTADO", len(batch_estado), duracion)
 
     print(f"Batch ESTADO MongoDB guardado: {len(batch_estado)} registros | {duracion:.4f} segundos | {rendimiento:.2f} reg/s")
 
